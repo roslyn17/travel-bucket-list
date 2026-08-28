@@ -6,6 +6,10 @@ import { formatVisitedDate } from "@/lib/date";
 import { clearVisitedDate, setVisited, setVisitedDate } from "./actions";
 
 const CURRENT_YEAR = new Date().getFullYear();
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export default function ItemRow({
   listSlug,
@@ -18,10 +22,10 @@ export default function ItemRow({
 }) {
   const [progress, setProgress] = useState(initialProgress);
   const [editingDate, setEditingDate] = useState(false);
-  const [precision, setPrecision] = useState<DatePrecision>(
-    progress?.visited_precision ?? "day",
-  );
-  const [dateValue, setDateValue] = useState(() => toInputValue(progress, precision));
+  const initialFields = toFields(initialProgress);
+  const [year, setYear] = useState(initialFields.year);
+  const [month, setMonth] = useState(initialFields.month);
+  const [day, setDay] = useState(initialFields.day);
   const [isPending, startTransition] = useTransition();
 
   const visited = progress?.visited ?? false;
@@ -43,8 +47,10 @@ export default function ItemRow({
   }
 
   function saveDate() {
-    const visitedOn = toVisitedOn(dateValue, precision);
-    if (!visitedOn) return;
+    if (!year) return;
+    const precision: DatePrecision = day && month ? "day" : month ? "month" : "year";
+    const visitedOn = `${year.padStart(4, "0")}-${(month || "01").padStart(2, "0")}-${(day || "01").padStart(2, "0")}`;
+
     startTransition(async () => {
       await setVisitedDate(item.id, listSlug, visitedOn, precision);
       setProgress((prev) => ({
@@ -66,6 +72,9 @@ export default function ItemRow({
         visited_on: null,
         visited_precision: null,
       }));
+      setYear("");
+      setMonth("");
+      setDay("");
       setEditingDate(false);
     });
   }
@@ -113,52 +122,44 @@ export default function ItemRow({
 
       {visited && editingDate && (
         <div className="mt-2 ml-7 flex flex-wrap items-center gap-2">
+          <input
+            type="number"
+            placeholder="Year"
+            value={year}
+            min={1900}
+            max={CURRENT_YEAR}
+            onChange={(e) => setYear(e.target.value)}
+            className="w-20 rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+          />
           <select
-            value={precision}
+            value={month}
             onChange={(e) => {
-              const next = e.target.value as DatePrecision;
-              setPrecision(next);
-              setDateValue(toInputValue(progress, next));
+              setMonth(e.target.value);
+              if (!e.target.value) setDay("");
             }}
             className="rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
           >
-            <option value="day">Exact date</option>
-            <option value="month">Month</option>
-            <option value="year">Year</option>
+            <option value="">Month (optional)</option>
+            {MONTH_NAMES.map((name, i) => (
+              <option key={name} value={String(i + 1).padStart(2, "0")}>
+                {name}
+              </option>
+            ))}
           </select>
-
-          {precision === "day" && (
-            <input
-              type="date"
-              value={dateValue}
-              max={`${CURRENT_YEAR}-12-31`}
-              onChange={(e) => setDateValue(e.target.value)}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          )}
-          {precision === "month" && (
-            <input
-              type="month"
-              value={dateValue}
-              max={`${CURRENT_YEAR}-12`}
-              onChange={(e) => setDateValue(e.target.value)}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          )}
-          {precision === "year" && (
-            <input
-              type="number"
-              value={dateValue}
-              min={1900}
-              max={CURRENT_YEAR}
-              onChange={(e) => setDateValue(e.target.value)}
-              className="w-20 rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          )}
+          <input
+            type="number"
+            placeholder="Day"
+            value={day}
+            min={1}
+            max={31}
+            disabled={!month}
+            onChange={(e) => setDay(e.target.value)}
+            className="w-16 rounded-md border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
+          />
 
           <button
             onClick={saveDate}
-            disabled={isPending || !dateValue}
+            disabled={isPending || !year}
             className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
           >
             Save
@@ -195,23 +196,14 @@ function emptyProgress(listItemId: string): UserProgress {
   };
 }
 
-/** Builds the initial value for the date input matching the given precision. */
-function toInputValue(progress: UserProgress | null, precision: DatePrecision): string {
-  if (!progress?.visited_on) {
-    return precision === "year" ? String(CURRENT_YEAR) : "";
+/** Splits a saved visited_on/visited_precision into the Year/Month/Day
+ * fields the form shows, leaving out whatever precision didn't capture. */
+function toFields(progress: UserProgress | null): { year: string; month: string; day: string } {
+  if (!progress?.visited_on || !progress.visited_precision) {
+    return { year: "", month: "", day: "" };
   }
   const [year, month, day] = progress.visited_on.split("-");
-  if (precision === "year") return year;
-  if (precision === "month") return `${year}-${month}`;
-  return progress.visited_precision === "day" ? `${year}-${month}-${day}` : "";
-}
-
-/** Normalizes a raw input value into a full YYYY-MM-DD for storage. */
-function toVisitedOn(value: string, precision: DatePrecision): string | null {
-  if (!value) return null;
-  if (precision === "day") return value; // already YYYY-MM-DD
-  if (precision === "month") return `${value}-01`; // value is YYYY-MM
-  const year = parseInt(value, 10);
-  if (!Number.isFinite(year)) return null;
-  return `${String(year).padStart(4, "0")}-01-01`;
+  if (progress.visited_precision === "year") return { year, month: "", day: "" };
+  if (progress.visited_precision === "month") return { year, month, day: "" };
+  return { year, month, day };
 }

@@ -35,14 +35,13 @@ export default async function AddListPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {available.map((list) => (
             <div key={list.id} className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-              <Link href={`/lists/${list.slug}`} className="mb-4 flex-1">
+              <div className="mb-4 flex-1">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
                   <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
                 </div>
                 {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
-                <span className="mt-2 inline-block text-xs text-zinc-400 underline">View list →</span>
-              </Link>
+              </div>
               <form
                 action={async () => {
                   "use server";
