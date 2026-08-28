@@ -16,7 +16,11 @@ export default function ListItemsClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter(({ item }) => item.name.toLowerCase().includes(q));
+    return items.filter(
+      ({ item }) =>
+        item.name.toLowerCase().includes(q) ||
+        item.metadata?.team?.toLowerCase().includes(q),
+    );
   }, [items, query]);
 
   return (

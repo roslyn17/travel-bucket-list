@@ -81,11 +81,23 @@ export default function ItemRow({
           className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700"
         />
         <div className="flex-1">
-          <span className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
-            {item.name}
-          </span>
-          {item.metadata?.state && (
-            <span className="ml-2 text-xs text-zinc-400">{item.metadata.state}</span>
+          {item.metadata?.team ? (
+            <>
+              <div className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
+                {item.metadata.team}
+                {item.metadata.city && (
+                  <span className="ml-2 text-xs text-zinc-400">{item.metadata.city}</span>
+                )}
+              </div>
+              <div className="text-xs text-zinc-400">{item.name}</div>
+            </>
+          ) : (
+            <span className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
+              {item.name}
+              {item.metadata?.state && (
+                <span className="ml-2 text-xs text-zinc-400">{item.metadata.state}</span>
+              )}
+            </span>
           )}
         </div>
         {visited && !editingDate && (
