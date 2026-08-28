@@ -3,6 +3,7 @@ export type List = {
   slug: string;
   name: string;
   description: string | null;
+  category: string;
 };
 
 export type ListItem = {
