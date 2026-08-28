@@ -34,7 +34,15 @@ export default function ListItemsClient({
       />
       <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
         {filtered.map(({ item, progress }) => (
-          <ItemRow key={item.id} listSlug={listSlug} item={item} initialProgress={progress} />
+          // Keying on the progress row's own id (not just the item's) forces
+          // a remount -- and a fresh local state -- whenever that row is
+          // deleted out from under it, e.g. by "Reset progress".
+          <ItemRow
+            key={`${item.id}:${progress?.id ?? "none"}`}
+            listSlug={listSlug}
+            item={item}
+            initialProgress={progress}
+          />
         ))}
         {filtered.length === 0 && (
           <li className="py-6 text-center text-sm text-zinc-500">No matches.</li>
