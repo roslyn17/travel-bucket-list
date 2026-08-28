@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List } from "@/lib/types";
 import { LIST_EMOJI } from "@/lib/listEmoji";
-import { addList } from "./actions";
+import { addList } from "@/lib/listActions";
 
 export default async function AddListPage() {
   const supabase = await createClient();
@@ -34,28 +34,29 @@ export default async function AddListPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {available.map((list) => (
-            <form
-              key={list.id}
-              action={async () => {
-                "use server";
-                await addList(list.id);
-              }}
-              className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800"
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
-                <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
-              </div>
-              {list.description && (
-                <p className="mb-4 flex-1 text-sm text-zinc-500">{list.description}</p>
-              )}
-              <button
-                type="submit"
-                className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            <div key={list.id} className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+              <Link href={`/lists/${list.slug}`} className="mb-4 flex-1">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
+                  <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
+                </div>
+                {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
+                <span className="mt-2 inline-block text-xs text-zinc-400 underline">View list →</span>
+              </Link>
+              <form
+                action={async () => {
+                  "use server";
+                  await addList(list.id, list.slug);
+                }}
               >
-                + Add to my lists
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  + Add to my lists
+                </button>
+              </form>
+            </div>
           ))}
         </div>
       )}

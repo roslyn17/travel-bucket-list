@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List } from "@/lib/types";
 import { LIST_EMOJI } from "@/lib/listEmoji";
+import { removeList } from "@/lib/listActions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -50,15 +51,9 @@ export default async function DashboardPage() {
 
       {lists.length === 0 && (
         <div className="rounded-lg border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-          <p className="mb-4 text-sm text-zinc-500">
-            You haven&apos;t added any bucket lists yet.
+          <p className="text-sm text-zinc-500">
+            You haven&apos;t added any bucket lists yet. Click &ldquo;+ Add bucket list&rdquo; above to get started.
           </p>
-          <Link
-            href="/lists/add"
-            className="inline-block rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            + Add bucket list
-          </Link>
         </div>
       )}
 
@@ -68,25 +63,40 @@ export default async function DashboardPage() {
           const visited = visitedByList.get(list.id) ?? 0;
           const pct = total > 0 ? Math.round((visited / total) * 100) : 0;
           return (
-            <Link
+            <div
               key={list.id}
-              href={`/lists/${list.slug}`}
               className="rounded-lg border border-zinc-200 p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
             >
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
-                <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
-              </div>
-              <p className="mb-3 text-sm text-zinc-500">
-                {visited} / {total} visited
-              </p>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-zinc-900 dark:bg-zinc-50"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </Link>
+              <Link href={`/lists/${list.slug}`} className="block">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
+                  <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
+                </div>
+                <p className="mb-3 text-sm text-zinc-500">
+                  {visited} / {total} visited
+                </p>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div
+                    className="h-full rounded-full bg-zinc-900 dark:bg-zinc-50"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </Link>
+              <form
+                action={async () => {
+                  "use server";
+                  await removeList(list.id, list.slug);
+                }}
+                className="mt-3"
+              >
+                <button
+                  type="submit"
+                  className="text-xs text-zinc-400 underline hover:text-red-600 dark:hover:text-red-400"
+                >
+                  Remove
+                </button>
+              </form>
+            </div>
           );
         })}
       </div>

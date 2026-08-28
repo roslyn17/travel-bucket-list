@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ItemWithProgress, List, ListItem, UserProgress } from "@/lib/types";
+import { addList } from "@/lib/listActions";
 import ListItemsClient from "./ListItemsClient";
 
 export default async function ListPage({
@@ -23,7 +24,7 @@ export default async function ListPage({
     .single<List>();
   if (!list) notFound();
 
-  const [{ data: items }, { data: progress }] = await Promise.all([
+  const [{ data: items }, { data: progress }, { data: membership }] = await Promise.all([
     supabase
       .from("list_items")
       .select("*")
@@ -35,7 +36,14 @@ export default async function ListPage({
       .select("*")
       .eq("user_id", user.id)
       .returns<UserProgress[]>(),
+    supabase
+      .from("user_lists")
+      .select("list_id")
+      .eq("user_id", user.id)
+      .eq("list_id", list.id)
+      .maybeSingle(),
   ]);
+  const isAdded = !!membership;
 
   const progressByItemId = new Map((progress ?? []).map((p) => [p.list_item_id, p]));
   const itemsWithProgress: ItemWithProgress[] = (items ?? []).map((item) => ({
@@ -54,6 +62,26 @@ export default async function ListPage({
       <p className="mt-1 mb-6 text-sm text-zinc-500">
         {visitedCount} / {itemsWithProgress.length} visited
       </p>
+
+      {!isAdded && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
+          <p className="text-sm text-zinc-500">This list isn&apos;t on your dashboard yet.</p>
+          <form
+            action={async () => {
+              "use server";
+              await addList(list.id, list.slug);
+            }}
+          >
+            <button
+              type="submit"
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium whitespace-nowrap text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              + Add to my lists
+            </button>
+          </form>
+        </div>
+      )}
+
       <ListItemsClient listSlug={list.slug} items={itemsWithProgress} />
     </div>
   );
