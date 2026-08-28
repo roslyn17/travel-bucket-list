@@ -93,8 +93,10 @@ export default function ItemRow({
           ) : (
             <span className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
               {item.name}
-              {item.metadata?.state && (
-                <span className="ml-2 text-xs text-zinc-400">{item.metadata.state}</span>
+              {(item.metadata?.state ?? item.metadata?.location) && (
+                <span className="ml-2 text-xs text-zinc-400">
+                  {item.metadata.state ?? item.metadata.location}
+                </span>
               )}
             </span>
           )}

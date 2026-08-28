@@ -2,13 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List } from "@/lib/types";
-
-const LIST_EMOJI: Record<string, string> = {
-  countries: "🌍",
-  "national-parks": "🏞️",
-  "us-states": "🗺️",
-  "mlb-stadiums": "⚾",
-};
+import { LIST_EMOJI } from "@/lib/listEmoji";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -17,11 +11,15 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: lists }, { data: items }, { data: progress }] = await Promise.all([
+  const [{ data: allLists }, { data: userLists }, { data: items }, { data: progress }] = await Promise.all([
     supabase.from("lists").select("*").order("slug"),
+    supabase.from("user_lists").select("list_id").eq("user_id", user.id),
     supabase.from("list_items").select("id, list_id"),
     supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
   ]);
+
+  const addedListIds = new Set((userLists ?? []).map((ul) => ul.list_id));
+  const lists = (allLists as List[] | null)?.filter((list) => addedListIds.has(list.id)) ?? [];
 
   const itemsByList = new Map<string, number>();
   for (const item of items ?? []) {
@@ -38,11 +36,34 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
-      <h1 className="mb-8 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-        Your bucket lists
-      </h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          Your bucket lists
+        </h1>
+        <Link
+          href="/lists/add"
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
+          + Add bucket list
+        </Link>
+      </div>
+
+      {lists.length === 0 && (
+        <div className="rounded-lg border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
+          <p className="mb-4 text-sm text-zinc-500">
+            You haven&apos;t added any bucket lists yet.
+          </p>
+          <Link
+            href="/lists/add"
+            className="inline-block rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            + Add bucket list
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {(lists as List[] | null)?.map((list) => {
+        {lists.map((list) => {
           const total = itemsByList.get(list.id) ?? 0;
           const visited = visitedByList.get(list.id) ?? 0;
           const pct = total > 0 ? Math.round((visited / total) * 100) : 0;
