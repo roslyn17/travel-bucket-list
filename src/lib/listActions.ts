@@ -50,3 +50,31 @@ export async function removeList(listId: string, listSlug: string) {
   revalidatePath("/lists/add");
   revalidatePath(`/lists/${listSlug}`);
 }
+
+/**
+ * Permanently clears the current user's visited status (and any saved
+ * dates) for every item in a list. Unlike removeList, this cannot be
+ * undone -- callers should confirm with the user before calling it.
+ */
+export async function resetListProgress(listId: string, listSlug: string) {
+  const { supabase, user } = await requireUser();
+
+  const { data: items, error: itemsError } = await supabase
+    .from("list_items")
+    .select("id")
+    .eq("list_id", listId);
+  if (itemsError) throw itemsError;
+
+  const itemIds = (items ?? []).map((item) => item.id);
+  if (itemIds.length > 0) {
+    const { error } = await supabase
+      .from("user_progress")
+      .delete()
+      .eq("user_id", user.id)
+      .in("list_item_id", itemIds);
+    if (error) throw error;
+  }
+
+  revalidatePath(`/lists/${listSlug}`);
+  revalidatePath("/dashboard");
+}

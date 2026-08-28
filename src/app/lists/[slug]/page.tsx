@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ItemWithProgress, List, ListItem, UserProgress } from "@/lib/types";
 import { addList } from "@/lib/listActions";
 import ListItemsClient from "./ListItemsClient";
+import ResetListButton from "./ResetListButton";
 
 export default async function ListPage({
   params,
@@ -59,9 +60,12 @@ export default async function ListPage({
         ← All lists
       </Link>
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{list.name}</h1>
-      <p className="mt-1 mb-6 text-sm text-zinc-500">
-        {visitedCount} / {itemsWithProgress.length} visited
-      </p>
+      <div className="mt-1 mb-6 flex items-center justify-between">
+        <p className="text-sm text-zinc-500">
+          {visitedCount} / {itemsWithProgress.length} visited
+        </p>
+        {visitedCount > 0 && <ResetListButton listId={list.id} listSlug={list.slug} />}
+      </div>
 
       {!isAdded && (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
