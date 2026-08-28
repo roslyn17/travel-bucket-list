@@ -84,12 +84,11 @@ export default function ItemRow({
           {item.metadata?.team ? (
             <>
               <div className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
-                {item.metadata.team}
-                {item.metadata.city && (
-                  <span className="ml-2 text-xs text-zinc-400">{item.metadata.city}</span>
-                )}
+                {item.metadata.team} — {item.name}
               </div>
-              <div className="text-xs text-zinc-400">{item.name}</div>
+              {item.metadata.city && (
+                <div className="text-xs text-zinc-400">{item.metadata.city}</div>
+              )}
             </>
           ) : (
             <span className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
