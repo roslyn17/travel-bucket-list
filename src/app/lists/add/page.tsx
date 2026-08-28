@@ -22,18 +22,23 @@ export default async function AddListPage() {
   ]);
 
   const addedListIds = new Set((userLists ?? []).map((ul) => ul.list_id));
-  const available = ((allLists as List[] | null) ?? []).filter((list) => !addedListIds.has(list.id));
-
-  const listsByCategory = new Map<string, List[]>();
-  for (const list of available) {
-    const bucket = listsByCategory.get(list.category) ?? [];
+  const allByCategory = new Map<string, List[]>();
+  const availableByCategory = new Map<string, List[]>();
+  for (const list of (allLists as List[] | null) ?? []) {
+    const bucket = allByCategory.get(list.category) ?? [];
     bucket.push(list);
-    listsByCategory.set(list.category, bucket);
+    allByCategory.set(list.category, bucket);
+
+    if (!addedListIds.has(list.id)) {
+      const availableBucket = availableByCategory.get(list.category) ?? [];
+      availableBucket.push(list);
+      availableByCategory.set(list.category, availableBucket);
+    }
   }
-  const otherCategories = [...listsByCategory.keys()]
+  const otherCategories = [...allByCategory.keys()]
     .filter((category) => !CATEGORY_ORDER.includes(category))
     .sort();
-  const categories = [...CATEGORY_ORDER, ...otherCategories].filter((category) => listsByCategory.has(category));
+  const categories = [...CATEGORY_ORDER, ...otherCategories].filter((category) => allByCategory.has(category));
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
@@ -44,43 +49,46 @@ export default async function AddListPage() {
         Add a bucket list
       </h1>
 
-      {available.length === 0 ? (
-        <p className="text-sm text-zinc-500">You&apos;ve already added every available list.</p>
-      ) : (
-        categories.map((category) => (
+      {categories.map((category) => {
+        const listsInCategory = availableByCategory.get(category) ?? [];
+        return (
           <div key={category} className="mb-8">
             <h2 className="mb-3 text-xs font-semibold tracking-wide text-zinc-400 uppercase">
               {category}
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {listsByCategory.get(category)!.map((list) => (
-                <div key={list.id} className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-                  <div className="mb-4 flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
-                      <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
+            {listsInCategory.length === 0 ? (
+              <p className="text-sm text-zinc-500">You&apos;ve added every list in this category.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {listsInCategory.map((list) => (
+                  <div key={list.id} className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+                    <div className="mb-4 flex-1">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
+                      </div>
+                      {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
                     </div>
-                    {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
-                  </div>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await addList(list.id, list.slug);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    <form
+                      action={async () => {
+                        "use server";
+                        await addList(list.id, list.slug);
+                      }}
                     >
-                      + Add to my lists
-                    </button>
-                  </form>
-                </div>
-              ))}
-            </div>
+                      <button
+                        type="submit"
+                        className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                      >
+                        + Add to my lists
+                      </button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        ))
-      )}
+        );
+      })}
     </div>
   );
 }
