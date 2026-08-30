@@ -7,4 +7,9 @@ export const LIST_EMOJI: Record<string, string> = {
   "nba-arenas": "🏀",
   "nhl-arenas": "🏒",
   "new-7-wonders": "🏛️",
+  "world-marathon-majors": "🏃",
+  "grand-slam-tennis": "🎾",
+  "f1-circuits": "🏎️",
+  "studio-ghibli-films": "🐉",
+  "pixar-films": "💡",
 };

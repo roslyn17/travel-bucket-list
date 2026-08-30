@@ -3,11 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List } from "@/lib/types";
 import { LIST_EMOJI } from "@/lib/listEmoji";
+import { LIST_GROUPS } from "@/lib/listGroups";
 import { addList } from "@/lib/listActions";
-
-// Display order for known categories; anything else (e.g. a category added
-// later without updating this list) is appended alphabetically after.
-const CATEGORY_ORDER = ["Geography", "Sports Venues", "Landmarks & Nature"];
 
 export default async function AddListPage() {
   const supabase = await createClient();
@@ -22,23 +19,23 @@ export default async function AddListPage() {
   ]);
 
   const addedListIds = new Set((userLists ?? []).map((ul) => ul.list_id));
-  const allByCategory = new Map<string, List[]>();
-  const availableByCategory = new Map<string, List[]>();
+  const allByGroup = new Map<string, List[]>();
+  const availableByGroup = new Map<string, List[]>();
   for (const list of (allLists as List[] | null) ?? []) {
-    const bucket = allByCategory.get(list.category) ?? [];
+    const bucket = allByGroup.get(list.list_group) ?? [];
     bucket.push(list);
-    allByCategory.set(list.category, bucket);
+    allByGroup.set(list.list_group, bucket);
 
     if (!addedListIds.has(list.id)) {
-      const availableBucket = availableByCategory.get(list.category) ?? [];
+      const availableBucket = availableByGroup.get(list.list_group) ?? [];
       availableBucket.push(list);
-      availableByCategory.set(list.category, availableBucket);
+      availableByGroup.set(list.list_group, availableBucket);
     }
   }
-  const otherCategories = [...allByCategory.keys()]
-    .filter((category) => !CATEGORY_ORDER.includes(category))
-    .sort();
-  const categories = [...CATEGORY_ORDER, ...otherCategories].filter((category) => allByCategory.has(category));
+  // Hide a group's section entirely if it has no list types at all yet;
+  // groups that just have everything already added still get a header
+  // (with a light empty state below) so users see the category exists.
+  const groups = LIST_GROUPS.filter((group) => allByGroup.has(group.key));
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
@@ -49,46 +46,52 @@ export default async function AddListPage() {
         Add a bucket list
       </h1>
 
-      {categories.map((category) => {
-        const listsInCategory = availableByCategory.get(category) ?? [];
+      {groups.map((group) => {
+        const listsInGroup = availableByGroup.get(group.key) ?? [];
         return (
-          <div key={category} className="mb-8">
-            <h2 className="mb-3 text-xs font-semibold tracking-wide text-zinc-400 uppercase">
-              {category}
+          <div key={group.key} className="mb-10">
+            <h2 className="mb-4 border-b border-zinc-200 pb-2 text-lg font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
+              {group.emoji} {group.label}
             </h2>
-            {listsInCategory.length === 0 ? (
+            {listsInGroup.length === 0 ? (
               <p className="text-sm text-zinc-500">You&apos;ve added every list in this category.</p>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {listsInCategory.map((list) => (
-                  <div key={list.id} className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-                    <div className="mb-4 flex-1">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
-                        <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
-                      </div>
-                      {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
-                    </div>
-                    <form
-                      action={async () => {
-                        "use server";
-                        await addList(list.id, list.slug);
-                      }}
-                    >
-                      <button
-                        type="submit"
-                        className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                      >
-                        + Add to my lists
-                      </button>
-                    </form>
-                  </div>
+                {listsInGroup.map((list) => (
+                  <ListCard key={list.id} list={list} />
                 ))}
               </div>
             )}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ListCard({ list }: { list: List }) {
+  return (
+    <div className="flex flex-col rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+      <div className="mb-4 flex-1">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
+          <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
+        </div>
+        {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
+      </div>
+      <form
+        action={async () => {
+          "use server";
+          await addList(list.id, list.slug);
+        }}
+      >
+        <button
+          type="submit"
+          className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
+          + Add to my lists
+        </button>
+      </form>
     </div>
   );
 }
