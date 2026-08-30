@@ -62,7 +62,7 @@ export default async function ListPage({
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{list.name}</h1>
       <div className="mt-1 mb-6 flex items-center justify-between">
         <p className="text-sm text-zinc-500">
-          {visitedCount} / {itemsWithProgress.length} visited
+          {visitedCount} / {itemsWithProgress.length} {list.action_verb.toLowerCase()}
         </p>
         {visitedCount > 0 && <ResetListButton listId={list.id} listSlug={list.slug} />}
       </div>

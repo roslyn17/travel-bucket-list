@@ -73,7 +73,7 @@ export default async function DashboardPage() {
                   <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
                 </div>
                 <p className="mb-3 text-sm text-zinc-500">
-                  {visited} / {total} visited
+                  {visited} / {total} {list.action_verb.toLowerCase()}
                 </p>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                   <div
