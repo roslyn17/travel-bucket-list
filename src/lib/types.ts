@@ -1,9 +1,25 @@
+export type Profile = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
+// Top-level grouping for the "Add a bucket list" browse page. Kept as a
+// plain string union (backed by a text + check constraint in the DB, not a
+// native enum) so adding a group later doesn't require a breaking type
+// migration -- see src/lib/listGroups.ts for display config.
+export type ListGroup = "places" | "experiences_challenges" | "culture_media";
+
 export type List = {
   id: string;
   slug: string;
   name: string;
   description: string | null;
   category: string;
+  list_group: ListGroup;
+  /** What checking off an item on this list means, e.g. "Visited", "Watched", "Ran". */
+  action_verb: string;
 };
 
 export type ListItem = {
