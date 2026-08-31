@@ -80,7 +80,7 @@ export default function SortableListGrid({ lists }: { lists: DashboardListCard[]
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext id="dashboard-lists" sensors={sensors} onDragEnd={handleDragEnd}>
       <SortableContext items={orderedIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {orderedIds.map((id) => {
