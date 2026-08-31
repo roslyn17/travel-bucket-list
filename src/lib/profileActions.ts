@@ -31,5 +31,5 @@ export async function updateAvatarUrl(avatarUrl: string) {
     .eq("id", user.id);
   if (error) throw error;
 
-  revalidatePath("/profile");
+  revalidatePath("/dashboard");
 }

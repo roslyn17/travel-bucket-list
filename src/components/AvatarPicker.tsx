@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { updateAvatarUrl } from "@/app/profile/actions";
+import { updateAvatarUrl } from "@/lib/profileActions";
 import { PRESET_AVATARS } from "@/lib/presetAvatars";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

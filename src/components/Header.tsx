@@ -16,12 +16,6 @@ export default async function Header() {
         </Link>
         {user && (
           <div className="flex items-center gap-4">
-            <Link
-              href="/profile"
-              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Profile
-            </Link>
             <span className="hidden text-sm text-zinc-500 sm:inline">{user.email}</span>
             <SignOutButton />
           </div>
