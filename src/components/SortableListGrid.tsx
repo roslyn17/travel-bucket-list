@@ -64,18 +64,17 @@ export default function SortableListGrid({ lists }: { lists: DashboardListCard[]
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    setOrderedIds((current) => {
-      const oldIndex = current.indexOf(String(active.id));
-      const newIndex = current.indexOf(String(over.id));
-      const next = arrayMove(current, oldIndex, newIndex);
-      startTransition(() => {
-        reorderLists(next).catch(() => {
-          // Best-effort: on failure, fall back to whatever the server last
-          // confirmed rather than leaving a card order that didn't save.
-          setOrderedIds(lists.map((l) => l.id));
-        });
+    const oldIndex = orderedIds.indexOf(String(active.id));
+    const newIndex = orderedIds.indexOf(String(over.id));
+    const next = arrayMove(orderedIds, oldIndex, newIndex);
+
+    setOrderedIds(next);
+    startTransition(() => {
+      reorderLists(next).catch(() => {
+        // Best-effort: on failure, fall back to whatever the server last
+        // confirmed rather than leaving a card order that didn't save.
+        setOrderedIds(lists.map((l) => l.id));
       });
-      return next;
     });
   }
 
