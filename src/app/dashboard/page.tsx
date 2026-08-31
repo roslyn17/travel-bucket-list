@@ -71,7 +71,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mb-10 grid grid-cols-2 gap-4">
-        <StatTile label="Items visited" value={stats.totalVisited} />
+        <StatTile label="Items completed" value={stats.totalVisited} />
         <StatTile label="Lists completed" value={stats.listsCompleted} />
       </div>
 
