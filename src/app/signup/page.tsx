@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import GoogleButton from "@/components/GoogleButton";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +51,11 @@ export default function SignupPage() {
       setCheckEmail(true);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    // Full page navigation, not router.push -- see SignOutButton for why:
+    // it guarantees no stale client-side cache from a previous session
+    // survives into this one.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/dashboard";
   }
 
   if (checkEmail) {
