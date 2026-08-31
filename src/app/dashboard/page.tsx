@@ -7,6 +7,7 @@ import { removeList } from "@/lib/listActions";
 import { getRankProgress } from "@/lib/rank";
 import { getProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
+import DisplayNameEditor from "@/components/DisplayNameEditor";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -41,8 +42,6 @@ export default async function DashboardPage() {
     if (listId) visitedByList.set(listId, (visitedByList.get(listId) ?? 0) + 1);
   }
 
-  const displayName =
-    (profile as Profile | null)?.display_name || user.email?.split("@")[0] || "Explorer";
   const { rank, nextRank, progressPct, pointsToNext } = getRankProgress(stats.totalVisited);
 
   return (
@@ -51,7 +50,10 @@ export default async function DashboardPage() {
         <AvatarPicker initialAvatarUrl={(profile as Profile | null)?.avatar_url ?? null} />
 
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{displayName}</h1>
+          <DisplayNameEditor
+            initialName={(profile as Profile | null)?.display_name ?? null}
+            fallbackName={user.email?.split("@")[0] || "Explorer"}
+          />
           <p className="mt-1 text-sm font-medium text-zinc-500">{rank.name}</p>
 
           <div className="mt-3 max-w-sm">

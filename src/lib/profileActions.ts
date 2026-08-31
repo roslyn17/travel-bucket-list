@@ -33,3 +33,25 @@ export async function updateAvatarUrl(avatarUrl: string) {
 
   revalidatePath("/dashboard");
 }
+
+const MAX_DISPLAY_NAME_LENGTH = 40;
+
+/** Updates the user's display name (shown instead of their email around the
+ * app). Passing an empty/whitespace-only string clears it, so the UI falls
+ * back to the local part of their email address. */
+export async function updateDisplayName(name: string) {
+  const { supabase, user } = await requireUser();
+
+  const trimmed = name.trim();
+  if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
+    throw new Error(`Name must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer.`);
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_name: trimmed || null, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+  if (error) throw error;
+
+  revalidatePath("/dashboard");
+}
