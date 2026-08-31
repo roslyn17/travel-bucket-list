@@ -109,27 +109,14 @@ function SortableListCard({ list }: { list: DashboardListCard }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-lg border border-zinc-200 p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600 ${
+      {...attributes}
+      {...listeners}
+      aria-label={`${list.name}, draggable to reorder`}
+      className={`touch-none cursor-grab rounded-lg border border-zinc-200 p-5 transition-colors hover:border-zinc-400 active:cursor-grabbing dark:border-zinc-800 dark:hover:border-zinc-600 ${
         isDragging ? "z-10 opacity-70" : ""
       }`}
     >
       <div className="mb-2 flex items-center gap-2">
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label={`Reorder ${list.name}`}
-          className="-ml-1 cursor-grab touch-none rounded p-1 text-zinc-300 hover:text-zinc-500 active:cursor-grabbing dark:text-zinc-600 dark:hover:text-zinc-400"
-        >
-          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-            <circle cx="6" cy="5" r="1.4" />
-            <circle cx="6" cy="10" r="1.4" />
-            <circle cx="6" cy="15" r="1.4" />
-            <circle cx="14" cy="5" r="1.4" />
-            <circle cx="14" cy="10" r="1.4" />
-            <circle cx="14" cy="15" r="1.4" />
-          </svg>
-        </button>
         <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
         <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
       </div>
