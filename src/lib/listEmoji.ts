@@ -1,5 +1,6 @@
 export const LIST_EMOJI: Record<string, string> = {
   countries: "🌍",
+  continents: "🌐",
   "national-parks": "🏞️",
   "us-states": "🗺️",
   "mlb-stadiums": "⚾",
