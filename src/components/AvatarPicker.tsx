@@ -5,6 +5,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { updateAvatarUrl } from "@/lib/profileActions";
 import { PRESET_AVATARS } from "@/lib/presetAvatars";
+import ImageCropModal from "@/components/ImageCropModal";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -18,9 +19,10 @@ export default function AvatarPicker({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-selecting the same file next time
     if (!file) return;
@@ -35,32 +37,35 @@ export default function AvatarPicker({
     }
 
     setError(null);
-    setBusy(true);
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not signed in.");
+    setOpen(false);
+    setCropImageSrc(URL.createObjectURL(file));
+  }
 
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+  function closeCropModal() {
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc(null);
+  }
 
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file);
-      if (uploadError) throw uploadError;
+  async function handleCropSave(blob: Blob) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not signed in.");
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(path);
+    const path = `${user.id}/${crypto.randomUUID()}.png`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, blob, { contentType: "image/png" });
+    if (uploadError) throw uploadError;
 
-      await updateAvatarUrl(publicUrl);
-      setAvatarUrl(publicUrl);
-      setOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
-    } finally {
-      setBusy(false);
-    }
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(path);
+
+    await updateAvatarUrl(publicUrl);
+    setAvatarUrl(publicUrl);
+    closeCropModal();
   }
 
   async function handlePresetSelect(url: string) {
@@ -111,7 +116,7 @@ export default function AvatarPicker({
               disabled={busy}
               className="mb-4 w-full rounded-md border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
-              {busy ? "Working..." : "Choose an image..."}
+              Choose an image...
             </button>
             <input
               ref={fileInputRef}
@@ -140,6 +145,10 @@ export default function AvatarPicker({
             {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
           </div>
         </>
+      )}
+
+      {cropImageSrc && (
+        <ImageCropModal imageSrc={cropImageSrc} onCancel={closeCropModal} onSave={handleCropSave} />
       )}
     </div>
   );
