@@ -2,12 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List, Profile } from "@/lib/types";
-import { LIST_EMOJI } from "@/lib/listEmoji";
-import { removeList } from "@/lib/listActions";
 import { getRankProgress } from "@/lib/rank";
 import { getProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
 import DisplayNameEditor from "@/components/DisplayNameEditor";
+import SortableListGrid, { type DashboardListCard } from "@/components/SortableListGrid";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -16,18 +15,21 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: allLists }, { data: userLists }, { data: items }, { data: progress }, { data: profile }, stats] =
+  const [{ data: userListRows }, { data: items }, { data: progress }, { data: profile }, stats] =
     await Promise.all([
-      supabase.from("lists").select("*").order("slug"),
-      supabase.from("user_lists").select("list_id").eq("user_id", user.id),
+      supabase
+        .from("user_lists")
+        .select("sort_order, list:lists(*)")
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true })
+        .returns<{ sort_order: number; list: List }[]>(),
       supabase.from("list_items").select("id, list_id"),
       supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
       supabase.from("profiles").select("id, email, display_name, avatar_url").eq("id", user.id).single(),
       getProfileStats(supabase, user.id),
     ]);
 
-  const addedListIds = new Set((userLists ?? []).map((ul) => ul.list_id));
-  const lists = (allLists as List[] | null)?.filter((list) => addedListIds.has(list.id)) ?? [];
+  const lists = (userListRows ?? []).map((row) => row.list);
 
   const itemsByList = new Map<string, number>();
   for (const item of items ?? []) {
@@ -97,49 +99,22 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {lists.map((list) => {
+      <SortableListGrid
+        lists={lists.map((list): DashboardListCard => {
           const total = itemsByList.get(list.id) ?? 0;
           const visited = visitedByList.get(list.id) ?? 0;
           const pct = total > 0 ? Math.round((visited / total) * 100) : 0;
-          return (
-            <div
-              key={list.id}
-              className="rounded-lg border border-zinc-200 p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
-            >
-              <Link href={`/lists/${list.slug}`} className="block">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
-                  <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
-                </div>
-                <p className="mb-3 text-sm text-zinc-500">
-                  {visited} / {total} {list.action_verb.toLowerCase()}
-                </p>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                  <div
-                    className="h-full rounded-full bg-zinc-900 dark:bg-zinc-50"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </Link>
-              <form
-                action={async () => {
-                  "use server";
-                  await removeList(list.id, list.slug);
-                }}
-                className="mt-3"
-              >
-                <button
-                  type="submit"
-                  className="text-xs text-zinc-400 underline hover:text-red-600 dark:hover:text-red-400"
-                >
-                  Remove
-                </button>
-              </form>
-            </div>
-          );
+          return {
+            id: list.id,
+            slug: list.slug,
+            name: list.name,
+            actionVerb: list.action_verb,
+            visited,
+            total,
+            pct,
+          };
         })}
-      </div>
+      />
     </div>
   );
 }

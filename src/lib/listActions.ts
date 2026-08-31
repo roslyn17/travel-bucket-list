@@ -23,9 +23,19 @@ async function requireUser() {
 export async function addList(listId: string, listSlug: string, redirectTo?: string) {
   const { supabase, user } = await requireUser();
 
+  // New lists join at the end of the user's current card order.
+  const { data: lastRow } = await supabase
+    .from("user_lists")
+    .select("sort_order")
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextSortOrder = (lastRow?.sort_order ?? -1) + 1;
+
   const { error } = await supabase
     .from("user_lists")
-    .insert({ user_id: user.id, list_id: listId });
+    .insert({ user_id: user.id, list_id: listId, sort_order: nextSortOrder });
   if (error) throw error;
 
   revalidatePath("/dashboard");
@@ -49,6 +59,29 @@ export async function removeList(listId: string, listSlug: string) {
   revalidatePath("/dashboard");
   revalidatePath("/lists/add");
   revalidatePath(`/lists/${listSlug}`);
+}
+
+/**
+ * Persists a new card order for the user's dashboard lists. `orderedListIds`
+ * is every list_id the user has added, in their new order; each row's
+ * sort_order is set to its index in that array.
+ */
+export async function reorderLists(orderedListIds: string[]) {
+  const { supabase, user } = await requireUser();
+
+  const results = await Promise.all(
+    orderedListIds.map((listId, index) =>
+      supabase
+        .from("user_lists")
+        .update({ sort_order: index })
+        .eq("user_id", user.id)
+        .eq("list_id", listId),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+
+  revalidatePath("/dashboard");
 }
 
 /**
