@@ -1,8 +1,13 @@
-import type { List } from "@/lib/types";
+import type { DifficultyTier, List } from "@/lib/types";
+import { POINTS_BY_TIER } from "@/lib/difficulty";
 
 export type ProfileStats = {
-  /** Total items checked off across all of the user's lists -- also their score, at 1 pt/item. */
+  /** Total items checked off across all of the user's lists. */
   totalVisited: number;
+  /** Total points across all lists and categories combined (Travel,
+   * Experiences & Challenges, Culture & Media aren't tracked separately) --
+   * drives the level system, see lib/level.ts. */
+  totalPoints: number;
   /** Count of the user's tracked lists (via user_lists) where every item is checked off. */
   listsCompleted: number;
 };
@@ -10,18 +15,25 @@ export type ProfileStats = {
 /**
  * Computes profile stats from data the caller has already fetched, rather
  * than re-querying. Dashboard-page data (user_lists, list_items,
- * user_progress) is needed for other things on the page anyway -- querying
- * it a second time here just for stats used to fire a redundant, duplicate
- * set of requests in the same burst as the page's own queries, which made
- * the whole page's data fetch more likely to trip over a transient network
- * hiccup right after login (cold connection, no pool warm-up yet).
+ * user_progress, lists) is needed for other things on the page anyway --
+ * querying it a second time here just for stats used to fire a redundant,
+ * duplicate set of requests in the same burst as the page's own queries,
+ * which made the whole page's data fetch more likely to trip over a
+ * transient network hiccup right after login (cold connection, no pool
+ * warm-up yet).
+ *
+ * `listTiers` covers every list, not just the ones on `user_lists` --
+ * removing a list preserves progress on it (see listActions.removeList), so
+ * a checked-off item on a since-removed list must still count.
  */
 export function computeProfileStats(
   userListRows: { list: Pick<List, "id"> }[],
   items: { id: string; list_id: string }[],
   progress: { list_item_id: string }[],
+  listTiers: { id: string; difficulty_tier: DifficultyTier }[],
 ): ProfileStats {
   const addedListIds = new Set(userListRows.map((row) => row.list.id));
+  const tierByListId = new Map(listTiers.map((l) => [l.id, l.difficulty_tier]));
 
   const itemsByList = new Map<string, number>();
   const itemToList = new Map<string, string>();
@@ -33,9 +45,13 @@ export function computeProfileStats(
   const visitedItemIds = new Set(progress.map((p) => p.list_item_id));
 
   const visitedByList = new Map<string, number>();
+  let totalPoints = 0;
   for (const itemId of visitedItemIds) {
     const listId = itemToList.get(itemId);
-    if (listId) visitedByList.set(listId, (visitedByList.get(listId) ?? 0) + 1);
+    if (!listId) continue;
+    visitedByList.set(listId, (visitedByList.get(listId) ?? 0) + 1);
+    const tier = tierByListId.get(listId);
+    if (tier) totalPoints += POINTS_BY_TIER[tier];
   }
 
   let listsCompleted = 0;
@@ -47,6 +63,7 @@ export function computeProfileStats(
 
   return {
     totalVisited: visitedItemIds.size,
+    totalPoints,
     listsCompleted,
   };
 }

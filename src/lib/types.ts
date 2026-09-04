@@ -11,6 +11,12 @@ export type Profile = {
 // migration -- see src/lib/listGroups.ts for display config.
 export type ListGroup = "places" | "experiences_challenges" | "culture_media";
 
+// How many points each checked-off item on a list is worth -- see
+// src/lib/difficulty.ts for the tier -> points lookup and display labels.
+// Every list in the DB has one (NOT NULL + check constraint); any new list
+// added to the catalog MUST specify a tier or its seed migration will fail.
+export type DifficultyTier = "low" | "medium-low" | "medium" | "medium-high" | "high" | "very-high";
+
 export type List = {
   id: string;
   slug: string;
@@ -20,6 +26,7 @@ export type List = {
   list_group: ListGroup;
   /** What checking off an item on this list means, e.g. "Visited", "Watched", "Ran". */
   action_verb: string;
+  difficulty_tier: DifficultyTier;
 };
 
 export type ListItem = {

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ItemWithProgress, List, ListItem, UserProgress } from "@/lib/types";
+import { POINTS_BY_TIER } from "@/lib/difficulty";
 import { addList } from "@/lib/listActions";
 import ListItemsClient from "./ListItemsClient";
 import ResetListButton from "./ResetListButton";
@@ -63,6 +64,7 @@ export default async function ListPage({
       <div className="mt-1 mb-6 flex items-center justify-between">
         <p className="text-sm text-zinc-500">
           {visitedCount} / {itemsWithProgress.length} {list.action_verb.toLowerCase()}
+          <span className="text-zinc-400"> · {POINTS_BY_TIER[list.difficulty_tier]} pts each</span>
         </p>
         {visitedCount > 0 && <ResetListButton listId={list.id} listSlug={list.slug} />}
       </div>
@@ -86,7 +88,11 @@ export default async function ListPage({
         </div>
       )}
 
-      <ListItemsClient listSlug={list.slug} items={itemsWithProgress} />
+      <ListItemsClient
+        listSlug={list.slug}
+        items={itemsWithProgress}
+        pointsPerItem={POINTS_BY_TIER[list.difficulty_tier]}
+      />
     </div>
   );
 }

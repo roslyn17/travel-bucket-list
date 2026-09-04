@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { List, Profile } from "@/lib/types";
-import { getRankProgress } from "@/lib/rank";
+import type { DifficultyTier, List, Profile } from "@/lib/types";
+import { getLevelProgress } from "@/lib/level";
 import { computeProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
 import DisplayNameEditor from "@/components/DisplayNameEditor";
+import ScoringInfoModal from "@/components/ScoringInfoModal";
 import SortableListGrid, { type DashboardListCard } from "@/components/SortableListGrid";
 
 export default async function DashboardPage() {
@@ -20,6 +21,7 @@ export default async function DashboardPage() {
     { data: items, error: itemsError },
     { data: progress, error: progressError },
     { data: profile, error: profileError },
+    { data: listTiers, error: listTiersError },
   ] = await Promise.all([
     supabase
       .from("user_lists")
@@ -30,16 +32,19 @@ export default async function DashboardPage() {
     supabase.from("list_items").select("id, list_id"),
     supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
     supabase.from("profiles").select("id, email, display_name, avatar_url").eq("id", user.id).single(),
+    // Every list, not just the user's added ones -- a checked-off item on a
+    // since-removed list still counts toward points (see profileStats.ts).
+    supabase.from("lists").select("id, difficulty_tier").returns<{ id: string; difficulty_tier: DifficultyTier }[]>(),
   ]);
 
   // A silently-swallowed error here (data null, coerced to []) is exactly
   // what previously made checked-off items appear to vanish after login --
   // surface it as a real error instead of rendering a false "0".
-  const queryError = userListsError ?? itemsError ?? progressError ?? profileError;
+  const queryError = userListsError ?? itemsError ?? progressError ?? profileError ?? listTiersError;
   if (queryError) throw queryError;
 
   const lists = (userListRows ?? []).map((row) => row.list);
-  const stats = computeProfileStats(userListRows ?? [], items ?? [], progress ?? []);
+  const stats = computeProfileStats(userListRows ?? [], items ?? [], progress ?? [], listTiers ?? []);
 
   const itemsByList = new Map<string, number>();
   for (const item of items ?? []) {
@@ -54,7 +59,7 @@ export default async function DashboardPage() {
     if (listId) visitedByList.set(listId, (visitedByList.get(listId) ?? 0) + 1);
   }
 
-  const { rank, nextRank, progressPct, pointsToNext } = getRankProgress(stats.totalVisited);
+  const { level, nextLevel, progressPct, pointsToNext } = getLevelProgress(stats.totalPoints);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
@@ -66,7 +71,10 @@ export default async function DashboardPage() {
             initialName={(profile as Profile | null)?.display_name ?? null}
             fallbackName={user.email?.split("@")[0] || "Explorer"}
           />
-          <p className="mt-1 text-sm font-medium text-zinc-500">{rank.name}</p>
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-500 sm:justify-start">
+            {level.name}
+            <ScoringInfoModal />
+          </p>
 
           <div className="mt-3 max-w-sm">
             <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
@@ -76,15 +84,16 @@ export default async function DashboardPage() {
               />
             </div>
             <p className="mt-1.5 text-xs text-zinc-500">
-              {nextRank
-                ? `${pointsToNext} pt${pointsToNext === 1 ? "" : "s"} to ${nextRank.name}`
-                : "Top rank reached!"}
+              {nextLevel
+                ? `${pointsToNext} pt${pointsToNext === 1 ? "" : "s"} to ${nextLevel.name}`
+                : "Max level reached!"}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mb-10 grid grid-cols-2 gap-4">
+      <div className="mb-10 grid grid-cols-3 gap-4">
+        <StatTile label="Points" value={stats.totalPoints} />
         <StatTile label="Items completed" value={stats.totalVisited} />
         <StatTile label="Lists completed" value={stats.listsCompleted} />
       </div>

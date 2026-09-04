@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List } from "@/lib/types";
+import { POINTS_BY_TIER } from "@/lib/difficulty";
 import { LIST_EMOJI } from "@/lib/listEmoji";
 import { LIST_GROUPS } from "@/lib/listGroups";
 import { addList } from "@/lib/listActions";
@@ -76,6 +77,9 @@ function ListCard({ list }: { list: List }) {
         <div className="mb-2 flex items-center gap-2">
           <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
           <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
+          <span className="ml-auto text-xs whitespace-nowrap text-zinc-400">
+            {POINTS_BY_TIER[list.difficulty_tier]} pts/item
+          </span>
         </div>
         {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
       </div>

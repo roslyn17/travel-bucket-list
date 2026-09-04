@@ -15,10 +15,12 @@ export default function ItemRow({
   listSlug,
   item,
   initialProgress,
+  points,
 }: {
   listSlug: string;
   item: ListItem;
   initialProgress: UserProgress | null;
+  points: number;
 }) {
   const [progress, setProgress] = useState(initialProgress);
   const [editingDate, setEditingDate] = useState(false);
@@ -94,6 +96,9 @@ export default function ItemRow({
             <>
               <div className={visited ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"}>
                 {item.metadata.team} — {item.name}
+                <span className="ml-2 text-xs text-zinc-400">
+                  {points} pt{points === 1 ? "" : "s"}
+                </span>
               </div>
               {item.metadata.city && (
                 <div className="text-xs text-zinc-400">{item.metadata.city}</div>
@@ -107,6 +112,9 @@ export default function ItemRow({
                   {item.metadata.state ?? item.metadata.location}
                 </span>
               )}
+              <span className="ml-2 text-xs text-zinc-400">
+                {points} pt{points === 1 ? "" : "s"}
+              </span>
             </span>
           )}
         </div>

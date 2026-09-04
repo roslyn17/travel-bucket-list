@@ -7,9 +7,11 @@ import ItemRow from "./ItemRow";
 export default function ListItemsClient({
   listSlug,
   items,
+  pointsPerItem,
 }: {
   listSlug: string;
   items: ItemWithProgress[];
+  pointsPerItem: number;
 }) {
   const [query, setQuery] = useState("");
 
@@ -42,6 +44,7 @@ export default function ListItemsClient({
             listSlug={listSlug}
             item={item}
             initialProgress={progress}
+            points={pointsPerItem}
           />
         ))}
         {filtered.length === 0 && (
