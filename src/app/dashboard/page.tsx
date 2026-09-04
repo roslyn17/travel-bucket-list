@@ -71,10 +71,10 @@ export default async function DashboardPage() {
             initialName={(profile as Profile | null)?.display_name ?? null}
             fallbackName={user.email?.split("@")[0] || "Explorer"}
           />
-          <p className="mt-1 flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-500 sm:justify-start">
+          <div className="mt-1 flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-500 sm:justify-start">
             {level.name}
             <ScoringInfoModal />
-          </p>
+          </div>
 
           <div className="mt-3 max-w-sm">
             <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
