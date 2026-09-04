@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DIFFICULTY_TIERS } from "@/lib/difficulty";
+import DifficultyBadge from "@/components/DifficultyBadge";
 
 /** Info button + modal explaining how points and levels work, opened from
  * next to the level display on the dashboard. */
@@ -38,9 +39,9 @@ export default function ScoringInfoModal() {
             </p>
 
             <ul className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
-              {DIFFICULTY_TIERS.map(({ tier, label, points }) => (
+              {DIFFICULTY_TIERS.map(({ tier, points }) => (
                 <li key={tier} className="flex items-center justify-between py-1.5">
-                  <span className="text-zinc-600 dark:text-zinc-300">{label}</span>
+                  <DifficultyBadge tier={tier} />
                   <span className="font-medium text-zinc-900 dark:text-zinc-50">
                     {points} pt{points === 1 ? "" : "s"}/item
                   </span>

@@ -93,8 +93,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className={`mb-10 grid gap-4 ${stats.listsCompleted > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className={`mb-10 grid gap-4 ${stats.listsCompleted > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
         <StatTile label="Total points earned" value={stats.totalPoints} />
+        <StatTile label="Items completed" value={stats.totalVisited} />
         {stats.listsCompleted > 0 && <StatTile label="Lists completed" value={stats.listsCompleted} />}
       </div>
 

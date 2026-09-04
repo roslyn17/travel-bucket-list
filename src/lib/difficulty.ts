@@ -35,6 +35,17 @@ export const DIFFICULTY_TIER_LABELS = Object.fromEntries(
   DIFFICULTY_TIERS.map(({ tier, label }) => [tier, label]),
 ) as Record<DifficultyTier, string>;
 
+/** tier -> badge color classes, ramping green (easy) to purple (hardest) --
+ * see components/DifficultyBadge.tsx, the one place these get applied. */
+export const DIFFICULTY_TIER_COLORS: Record<DifficultyTier, string> = {
+  low: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  "medium-low": "bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300",
+  medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  "medium-high": "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  high: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  "very-high": "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+};
+
 /** The two difficulty-filter buckets offered on the "Add a bucket list"
  * page's filter control. */
 export const DIFFICULTY_FILTER_TIERS: Record<"low-medium" | "high-very-high", DifficultyTier[]> = {

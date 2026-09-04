@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { DifficultyTier } from "@/lib/types";
-import { DIFFICULTY_TIER_LABELS } from "@/lib/difficulty";
+import DifficultyBadge from "@/components/DifficultyBadge";
 import { LIST_EMOJI } from "@/lib/listEmoji";
 import { removeList, reorderLists } from "@/lib/listActions";
 
@@ -124,9 +124,11 @@ function SortableListCard({ list }: { list: DashboardListCard }) {
         <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
       </div>
 
-      <p className="mb-2 text-xs text-zinc-400">
-        {DIFFICULTY_TIER_LABELS[list.difficultyTier]} · {list.visited * list.pointsPerItem} pts
-        earned · {list.pointsPerItem} pts / item
+      <p className="mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-400">
+        <DifficultyBadge tier={list.difficultyTier} />
+        <span>
+          {list.visited * list.pointsPerItem} pts earned · {list.pointsPerItem} pts / item
+        </span>
       </p>
 
       <Link href={`/lists/${list.slug}`} className="block">

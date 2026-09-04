@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { List, ListGroup } from "@/lib/types";
-import { DIFFICULTY_FILTER_TIERS, DIFFICULTY_TIER_LABELS, POINTS_BY_TIER } from "@/lib/difficulty";
+import { DIFFICULTY_FILTER_TIERS, POINTS_BY_TIER } from "@/lib/difficulty";
+import DifficultyBadge from "@/components/DifficultyBadge";
 import { LIST_EMOJI } from "@/lib/listEmoji";
 import { addList } from "@/lib/listActions";
 
@@ -112,8 +113,9 @@ function ListCard({ list }: { list: List }) {
           <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
           <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h3>
         </div>
-        <p className="mb-2 text-xs text-zinc-400">
-          {DIFFICULTY_TIER_LABELS[list.difficulty_tier]} · {POINTS_BY_TIER[list.difficulty_tier]} pts / item
+        <p className="mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-400">
+          <DifficultyBadge tier={list.difficulty_tier} />
+          <span>{POINTS_BY_TIER[list.difficulty_tier]} pts / item</span>
         </p>
         {list.description && <p className="text-sm text-zinc-500">{list.description}</p>}
       </div>
