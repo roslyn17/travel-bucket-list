@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { List, Profile } from "@/lib/types";
 import { getRankProgress } from "@/lib/rank";
-import { getProfileStats } from "@/lib/profileStats";
+import { computeProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
 import DisplayNameEditor from "@/components/DisplayNameEditor";
 import SortableListGrid, { type DashboardListCard } from "@/components/SortableListGrid";
@@ -15,21 +15,31 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: userListRows }, { data: items }, { data: progress }, { data: profile }, stats] =
-    await Promise.all([
-      supabase
-        .from("user_lists")
-        .select("sort_order, list:lists(*)")
-        .eq("user_id", user.id)
-        .order("sort_order", { ascending: true })
-        .returns<{ sort_order: number; list: List }[]>(),
-      supabase.from("list_items").select("id, list_id"),
-      supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
-      supabase.from("profiles").select("id, email, display_name, avatar_url").eq("id", user.id).single(),
-      getProfileStats(supabase, user.id),
-    ]);
+  const [
+    { data: userListRows, error: userListsError },
+    { data: items, error: itemsError },
+    { data: progress, error: progressError },
+    { data: profile, error: profileError },
+  ] = await Promise.all([
+    supabase
+      .from("user_lists")
+      .select("sort_order, list:lists(*)")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
+      .returns<{ sort_order: number; list: List }[]>(),
+    supabase.from("list_items").select("id, list_id"),
+    supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
+    supabase.from("profiles").select("id, email, display_name, avatar_url").eq("id", user.id).single(),
+  ]);
+
+  // A silently-swallowed error here (data null, coerced to []) is exactly
+  // what previously made checked-off items appear to vanish after login --
+  // surface it as a real error instead of rendering a false "0".
+  const queryError = userListsError ?? itemsError ?? progressError ?? profileError;
+  if (queryError) throw queryError;
 
   const lists = (userListRows ?? []).map((row) => row.list);
+  const stats = computeProfileStats(userListRows ?? [], items ?? [], progress ?? []);
 
   const itemsByList = new Map<string, number>();
   for (const item of items ?? []) {
