@@ -9,13 +9,13 @@ export type Level = {
 };
 
 export const LEVELS: Level[] = [
-  { name: "Novice Explorer", minPoints: 0 },
-  { name: "Wanderer", minPoints: 75 },
-  { name: "Adventurer", minPoints: 200 },
-  { name: "Voyager", minPoints: 450 },
-  { name: "Globetrotter", minPoints: 900 },
+  { name: "Beginner", minPoints: 0 },
+  { name: "Enthusiast", minPoints: 75 },
+  { name: "Achiever", minPoints: 200 },
+  { name: "Collector", minPoints: 450 },
+  { name: "Completionist", minPoints: 900 },
   { name: "Legend", minPoints: 1800 },
-  { name: "World Master", minPoints: 3500 },
+  { name: "Grandmaster", minPoints: 3500 },
 ];
 
 export type LevelProgress = {
