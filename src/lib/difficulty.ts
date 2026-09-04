@@ -45,10 +45,3 @@ export const DIFFICULTY_TIER_COLORS: Record<DifficultyTier, string> = {
   high: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
   "very-high": "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
 };
-
-/** The two difficulty-filter buckets offered on the "Add a bucket list"
- * page's filter control. */
-export const DIFFICULTY_FILTER_TIERS: Record<"low-medium" | "high-very-high", DifficultyTier[]> = {
-  "low-medium": ["low", "medium-low", "medium"],
-  "high-very-high": ["medium-high", "high", "very-high"],
-};
