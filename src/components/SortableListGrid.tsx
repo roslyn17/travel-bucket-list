@@ -18,6 +18,8 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { DifficultyTier } from "@/lib/types";
+import { DIFFICULTY_TIER_LABELS } from "@/lib/difficulty";
 import { LIST_EMOJI } from "@/lib/listEmoji";
 import { removeList, reorderLists } from "@/lib/listActions";
 
@@ -29,6 +31,8 @@ export type DashboardListCard = {
   visited: number;
   total: number;
   pct: number;
+  difficultyTier: DifficultyTier;
+  pointsPerItem: number;
 };
 
 /** Drag-and-drop-reorderable grid of the user's bucket list cards. Order is
@@ -119,6 +123,11 @@ function SortableListCard({ list }: { list: DashboardListCard }) {
         <span className="text-xl">{LIST_EMOJI[list.slug] ?? "📍"}</span>
         <h2 className="font-medium text-zinc-900 dark:text-zinc-50">{list.name}</h2>
       </div>
+
+      <p className="mb-2 text-xs text-zinc-400">
+        {DIFFICULTY_TIER_LABELS[list.difficultyTier]} · {list.visited * list.pointsPerItem} pts
+        earned · {list.pointsPerItem} pts / item
+      </p>
 
       <Link href={`/lists/${list.slug}`} className="block">
         <p className="mb-3 text-sm text-zinc-500">

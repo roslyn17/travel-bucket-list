@@ -29,3 +29,15 @@ export const DIFFICULTY_TIERS: { tier: DifficultyTier; label: string; points: nu
   { tier: "high", label: "High", points: POINTS_BY_TIER.high },
   { tier: "very-high", label: "Very high", points: POINTS_BY_TIER["very-high"] },
 ];
+
+/** tier -> display label, e.g. for a "Medium" badge on a list card. */
+export const DIFFICULTY_TIER_LABELS = Object.fromEntries(
+  DIFFICULTY_TIERS.map(({ tier, label }) => [tier, label]),
+) as Record<DifficultyTier, string>;
+
+/** The two difficulty-filter buckets offered on the "Add a bucket list"
+ * page's filter control. */
+export const DIFFICULTY_FILTER_TIERS: Record<"low-medium" | "high-very-high", DifficultyTier[]> = {
+  "low-medium": ["low", "medium-low", "medium"],
+  "high-very-high": ["medium-high", "high", "very-high"],
+};

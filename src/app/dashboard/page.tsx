@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { DifficultyTier, List, Profile } from "@/lib/types";
+import { POINTS_BY_TIER } from "@/lib/difficulty";
 import { getLevelProgress } from "@/lib/level";
 import { computeProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
@@ -92,10 +93,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mb-10 grid grid-cols-3 gap-4">
-        <StatTile label="Points" value={stats.totalPoints} />
-        <StatTile label="Items completed" value={stats.totalVisited} />
-        <StatTile label="Lists completed" value={stats.listsCompleted} />
+      <div className={`mb-10 grid gap-4 ${stats.listsCompleted > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
+        <StatTile label="Total points earned" value={stats.totalPoints} />
+        {stats.listsCompleted > 0 && <StatTile label="Lists completed" value={stats.listsCompleted} />}
       </div>
 
       <div className="mb-8 flex items-center justify-between">
@@ -131,6 +131,8 @@ export default async function DashboardPage() {
             visited,
             total,
             pct,
+            difficultyTier: list.difficulty_tier,
+            pointsPerItem: POINTS_BY_TIER[list.difficulty_tier],
           };
         })}
       />
