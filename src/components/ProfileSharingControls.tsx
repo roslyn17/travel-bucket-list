@@ -1,0 +1,131 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { updateProfileVisibility } from "@/lib/profileActions";
+import { generateProfileSnapshot } from "@/lib/shareSnapshot";
+
+/** The "Make my profile public" toggle and the "Share" snapshot button,
+ * combined into one component (they live right next to each other, and the
+ * Share button needs to know the toggle's current state -- including a
+ * toggle flipped this render, before any server revalidation lands). */
+export default function ProfileSharingControls({
+  initialIsPublic,
+  displayName,
+  avatarUrl,
+  levelName,
+  totalPoints,
+  totalVisited,
+}: {
+  initialIsPublic: boolean;
+  /** The raw stored display_name -- null if never set. This doubles as the
+   * public URL's handle, so sharing/going public both require it. */
+  displayName: string | null;
+  avatarUrl: string | null;
+  levelName: string;
+  totalPoints: number;
+  totalVisited: number;
+}) {
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [pending, startTransition] = useTransition();
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+
+  const publicPath = displayName ? `/u/${encodeURIComponent(displayName)}` : null;
+
+  function handleToggle() {
+    const next = !isPublic;
+    setToggleError(null);
+
+    if (next && !displayName) {
+      setToggleError("Set a display name above first -- it's used as your public profile's URL.");
+      return;
+    }
+
+    setIsPublic(next);
+    startTransition(async () => {
+      try {
+        await updateProfileVisibility(next);
+      } catch (err) {
+        setIsPublic(!next);
+        setToggleError(err instanceof Error ? err.message : "Couldn't update sharing setting.");
+      }
+    });
+  }
+
+  async function handleShare() {
+    setShareError(null);
+
+    if (!isPublic || !displayName || !publicPath) {
+      setShareError("Make your profile public first -- otherwise the link on the card won't lead anywhere.");
+      return;
+    }
+
+    setSharing(true);
+    try {
+      const blob = await generateProfileSnapshot({
+        name: displayName,
+        avatarUrl,
+        levelName,
+        totalPoints,
+        totalVisited,
+        publicUrl: `travelbucketlist.app${publicPath}`,
+      });
+      const file = new File([blob], "travel-bucket-list-profile.png", { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "My Travel Bucket List" });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "travel-bucket-list-profile.png";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      // A cancelled share sheet isn't a real failure.
+      if (err instanceof Error && err.name !== "AbortError") {
+        setShareError("Couldn't generate the share image. Please try again.");
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2 sm:items-start">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
+        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <input
+            type="checkbox"
+            checked={isPublic}
+            disabled={pending}
+            onChange={handleToggle}
+            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700"
+          />
+          Make my profile public
+        </label>
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={sharing}
+          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+        >
+          {sharing ? "Generating..." : "Share"}
+        </button>
+      </div>
+
+      {isPublic && publicPath && (
+        <p className="text-xs text-zinc-500">
+          Public at{" "}
+          <a href={publicPath} target="_blank" rel="noopener noreferrer" className="underline">
+            {publicPath}
+          </a>
+        </p>
+      )}
+      {toggleError && <p className="text-xs text-red-600 dark:text-red-400">{toggleError}</p>}
+      {shareError && <p className="text-xs text-red-600 dark:text-red-400">{shareError}</p>}
+    </div>
+  );
+}

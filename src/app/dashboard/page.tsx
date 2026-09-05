@@ -8,6 +8,8 @@ import { computeProfileStats } from "@/lib/profileStats";
 import AvatarPicker from "@/components/AvatarPicker";
 import DisplayNameEditor from "@/components/DisplayNameEditor";
 import ScoringInfoModal from "@/components/ScoringInfoModal";
+import ProfileSharingControls from "@/components/ProfileSharingControls";
+import StatTile from "@/components/StatTile";
 import SortableListGrid, { type DashboardListCard } from "@/components/SortableListGrid";
 
 export default async function DashboardPage() {
@@ -32,7 +34,7 @@ export default async function DashboardPage() {
       .returns<{ sort_order: number; list: List }[]>(),
     supabase.from("list_items").select("id, list_id"),
     supabase.from("user_progress").select("list_item_id").eq("user_id", user.id).eq("visited", true),
-    supabase.from("profiles").select("id, email, display_name, avatar_url").eq("id", user.id).single(),
+    supabase.from("profiles").select("id, email, display_name, avatar_url, is_public").eq("id", user.id).single(),
     // Every list, not just the user's added ones -- a checked-off item on a
     // since-removed list still counts toward points (see profileStats.ts).
     supabase.from("lists").select("id, difficulty_tier").returns<{ id: string; difficulty_tier: DifficultyTier }[]>(),
@@ -90,6 +92,15 @@ export default async function DashboardPage() {
                 : "Max level reached!"}
             </p>
           </div>
+
+          <ProfileSharingControls
+            initialIsPublic={(profile as Profile | null)?.is_public ?? false}
+            displayName={(profile as Profile | null)?.display_name ?? null}
+            avatarUrl={(profile as Profile | null)?.avatar_url ?? null}
+            levelName={level.name}
+            totalPoints={stats.totalPoints}
+            totalVisited={stats.totalVisited}
+          />
         </div>
       </div>
 
@@ -137,15 +148,6 @@ export default async function DashboardPage() {
           };
         })}
       />
-    </div>
-  );
-}
-
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-zinc-200 p-5 text-center dark:border-zinc-800">
-      <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{value}</p>
-      <p className="mt-1 text-xs text-zinc-500">{label}</p>
     </div>
   );
 }

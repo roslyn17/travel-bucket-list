@@ -3,6 +3,10 @@ export type Profile = {
   email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  /** Whether /u/[display_name] is publicly viewable. All-or-nothing --
+   * there's no per-list hiding. display_name doubles as the public handle,
+   * so it must be set before this can be turned on (see profileActions.ts). */
+  is_public: boolean;
 };
 
 // Top-level grouping for the "Add a bucket list" browse page. Kept as a

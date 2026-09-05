@@ -51,7 +51,48 @@ export async function updateDisplayName(name: string) {
     .from("profiles")
     .update({ display_name: trimmed || null, updated_at: new Date().toISOString() })
     .eq("id", user.id);
+  if (error) {
+    // There's no separate "username" field -- display_name doubles as the
+    // public profile handle at /u/[display_name] (see the unique index in
+    // 20260904000001_add_profile_public_sharing.sql), so it has to be
+    // unique. 23505 = Postgres unique_violation.
+    if (error.code === "23505") throw new Error("That name is already taken. Try another.");
+    throw error;
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u/[username]", "page");
+}
+
+/**
+ * Turns the user's public profile (/u/[display_name]) on or off. All or
+ * nothing -- there's no per-list visibility. Since display_name doubles as
+ * the public URL's handle, turning sharing on requires one to already be
+ * set; otherwise the link on a share card would point at nothing.
+ */
+export async function updateProfileVisibility(isPublic: boolean) {
+  const { supabase, user } = await requireUser();
+
+  if (isPublic) {
+    const { data: profile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+    if (fetchError) throw fetchError;
+    if (!profile?.display_name) {
+      throw new Error(
+        "Set a display name before making your profile public -- it's used as your public profile's URL.",
+      );
+    }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ is_public: isPublic, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
   if (error) throw error;
 
   revalidatePath("/dashboard");
+  revalidatePath("/u/[username]", "page");
 }

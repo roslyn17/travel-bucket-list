@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import SignOutButton from "@/components/SignOutButton";
+import HeaderRight from "@/components/HeaderRight";
 
 export default async function Header() {
   const supabase = await createClient();
@@ -14,12 +14,7 @@ export default async function Header() {
         <Link href={user ? "/dashboard" : "/"} className="font-semibold text-zinc-900 dark:text-zinc-50">
           🧳 Travel Bucket List
         </Link>
-        {user && (
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-zinc-500 sm:inline">{user.email}</span>
-            <SignOutButton />
-          </div>
-        )}
+        <HeaderRight email={user?.email ?? null} />
       </div>
     </header>
   );
